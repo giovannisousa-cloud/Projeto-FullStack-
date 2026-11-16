@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "supabase-financeiro": {
+      "command": "node",
+      "args": ["mcp-supabase/src/index.js"]
+    }
+  }
+}

@@ -3,15 +3,14 @@ import { Routes, Route, Navigate, NavLink, useNavigate, useLocation } from 'reac
 import {
   LayoutDashboard, ArrowLeftRight, Tags, Wallet, ChartNoAxesCombined, CreditCard,
   HeartPulse, LogOut, Bell, Plus, Search, Menu, X, ArrowUpRight, ArrowDownRight,
-  ChevronDown, CalendarDays, MoreHorizontal, Sparkles, CircleHelp, Settings,
+  ChevronDown, CalendarDays, MoreHorizontal, Sparkles, CircleHelp,
   TrendingUp, PiggyBank, ShoppingBag, Car, House, Coffee, BriefcaseBusiness
 } from 'lucide-react'
 import {
   Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis,
   PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts'
-import api from './services/api'
-import { useAuth } from './contexts/AuthContext'
+import { useAuth } from './AuthContext'
 
 const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
@@ -149,8 +148,27 @@ function AuthPage({ register = false }) {
 }
 function Field({ label, children }) { return <label className="field"><span>{label}</span>{children}</label> }
 
-function Shell() {
+function ProfileMenu() {
   const { user, logout } = useAuth()
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    const close = (e) => { if (e.type === 'click' || e.key === 'Escape') setOpen(false) }
+    document.addEventListener('click', close)
+    document.addEventListener('keydown', close)
+    return () => { document.removeEventListener('click', close); document.removeEventListener('keydown', close) }
+  }, [open])
+  const nome = user?.nome || 'Usuário'
+  return <div className="profile-menu" onClick={(e) => e.stopPropagation()}>
+    <button className="top-avatar" onClick={() => setOpen(!open)} aria-haspopup="menu" aria-expanded={open}>{nome.slice(0,1).toUpperCase()}</button>
+    {open && <div className="profile-dropdown" role="menu">
+      <div className="profile-dropdown-head"><div className="avatar">{nome.slice(0,1).toUpperCase()}</div><div className="profile-text"><strong>{nome}</strong><span>{user?.email}</span></div></div>
+      <button role="menuitem" className="profile-dropdown-item danger" onClick={logout}><LogOut size={16}/> Sair da conta</button>
+    </div>}
+  </div>
+}
+
+function Shell() {
   const [sidebar, setSidebar] = useState(false)
   const location = useLocation()
   const title = navItems.find(n => n[1] === location.pathname)?.[0] || 'Visão geral'
@@ -162,12 +180,10 @@ function Shell() {
       <nav className="side-nav">{navItems.map(([label, path, Icon]) => <NavLink key={path} to={path} end={path === '/'} onClick={() => setSidebar(false)} className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}><Icon size={18}/><span>{label}</span>{label === 'Faturas' && <i className="nav-dot"/>}</NavLink>)}</nav>
       <div className="sidebar-bottom">
         <div className="help-card"><div className="help-icon"><CircleHelp size={17}/></div><strong>Precisa de ajuda?</strong><span>Estamos aqui para você.</span><a href="mailto:suporte@orbe.app">Fale com a gente ↗</a></div>
-        <button className="nav-link logout-link" onClick={logout}><LogOut size={18}/> Sair da conta</button>
-        <div className="profile-row"><div className="avatar">{(user?.nome || 'J').slice(0,1).toUpperCase()}</div><div className="profile-text"><strong>{user?.nome || 'Jedson'}</strong><span>Conta pessoal</span></div><MoreHorizontal size={18}/></div>
       </div>
     </aside>
     <main className="main-area">
-      <header className="topbar"><button className="icon-btn menu-btn" onClick={() => setSidebar(true)}><Menu/></button><div className="breadcrumb">Workspace <span>/</span> <strong>{title}</strong></div><div className="top-actions"><span className="today-label"><CalendarDays size={15}/> Novembro, 2026</span><button className="icon-btn notification"><Bell size={18}/><i/></button><div className="top-avatar">{(user?.nome || 'J').slice(0,1).toUpperCase()}</div></div></header>
+      <header className="topbar"><button className="icon-btn menu-btn" onClick={() => setSidebar(true)}><Menu/></button><div className="breadcrumb">Workspace <span>/</span> <strong>{title}</strong></div><div className="top-actions"><span className="today-label"><CalendarDays size={15}/> Novembro, 2026</span><button className="icon-btn notification"><Bell size={18}/><i/></button><ProfileMenu/></div></header>
       <div className="page-content"><Routes>
         <Route path="/" element={<Dashboard/>}/>
         <Route path="/lancamentos" element={<Transactions/>}/>
